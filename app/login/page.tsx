@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/lib/hooks';
 
-export default function LoginPage() {
+// Separate component that uses useSearchParams
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
@@ -63,7 +65,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background">
+    <>
       <Header cartCount={0} />
       <div className="flex flex-col items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-sm">
@@ -131,6 +133,22 @@ export default function LoginPage() {
         </div>
       </div>
       <Footer />
-    </main>
+    </>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
