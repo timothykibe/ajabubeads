@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Harmony Gold Beaded Bracelet",
+    "description": "A stunning combination of gold and amber clay beads with traditional African patterns. Perfect for daily wear or special occasions.",
+    "price": 2800,
+    "costPrice": 1200,
+    "sku": "BRACELET-001",
+    "category": "Bracelets",
+    "colors": ["Gold", "Amber"],
+    "sizes": ["M", "L"],
+    "images": ["/products/bracelet-1.jpg"],
+    "stock": 25,
+    "lowStockAlert": 5,
+    "slug": "harmony-gold-beaded-bracelet",
+    "rating": 5,
+    "reviewCount": 148,
+    "inStock": true,
+    "isActive": true,
+    "isFeatured": true,
+    "metaTitle": "Harmony Gold Beaded Bracelet - Handcrafted African Jewelry",
+    "metaDescription": "Stunning gold and amber clay beads bracelet with traditional African patterns. Shop now for authentic handcrafted jewelry."
+  }
+]

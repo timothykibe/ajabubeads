@@ -1,0 +1,355 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User Models
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String?
+  password  String
+  phone     String?
+  image     String?
+  
+  // Address
+  address   String?
+  city      String?
+  postalCode String?
+  country   String?
+  
+  // Roles
+  isAdmin   Boolean    @default(false)
+  isSuperAdmin Boolean @default(false)
+  isSubscribed Boolean @default(false)
+  
+  // Status
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  orders    Order[]
+  addresses Address[]
+  analytics AnalyticsEvent[]
+  // Saved products (wishlist)
+  savedProducts SavedProduct[]
+  
+  @@index([email])
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  firstName String
+  lastName  String
+  email     String
+  phone     String
+  address   String
+  city      String
+  postalCode String
+  country   String @default("Kenya")
+  
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+}
+
+// Product Models
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @db.Text
+  price       Float
+  costPrice   Float?
+  sku         String    @unique
+  
+  // Images
+  images      String[]  @default([])
+  
+  // Details
+  category    String
+  colors      String[]  @default([])
+  sizes       String[]  @default([])
+  
+  // Inventory
+  stock       Int       @default(0)
+  lowStockAlert Int     @default(10)
+  
+  // Metadata
+  rating      Float     @default(0)
+  reviewCount Int       @default(0)
+  inStock     Boolean   @default(true)
+  isActive    Boolean   @default(true)
+  isFeatured  Boolean   @default(false)
+  
+  // SEO
+  slug        String    @unique
+  metaTitle   String?
+  metaDescription String?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  orderItems  OrderItem[]
+  analytics   ProductAnalytics[]
+  reviews     Review[]
+  // Saved products (wishlist)
+  savedProducts SavedProduct[]
+  
+  @@index([category])
+  @@index([slug])
+}
+
+// Saved products (wishlists)
+model SavedProduct {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([productId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  userId    String?
+  email     String
+  name      String
+  rating    Int
+  comment   String?   @db.Text
+  
+  isApproved Boolean @default(false)
+  createdAt DateTime @default(now())
+  
+  @@index([productId])
+}
+
+// Order Models
+model Order {
+  id          String    @id @default(cuid())
+  orderNumber String    @unique
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Guest Checkout
+  guestToken  String?   @unique
+  
+  // Shipping
+  firstName   String
+  lastName    String
+  email       String
+  phone       String
+  address     String
+  city        String
+  postalCode  String
+  country     String
+  
+  // Order Details
+  subtotal    Float
+  tax         Float
+  shipping    Float
+  total       Float
+  
+  // Status
+  status      OrderStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod PaymentMethod
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  items       OrderItem[]
+  payment     Payment?
+  
+  @@index([userId])
+  @@index([guestToken])
+  @@index([status])
+  @@index([paymentStatus])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  
+  quantity  Int
+  price     Float
+  color     String?
+  size      String?
+  
+  @@index([orderId])
+  @@index([productId])
+}
+
+// Payment Models
+model Payment {
+  id          String    @id @default(cuid())
+  orderId     String    @unique
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  method      PaymentMethod
+  amount      Float
+  currency    String    @default("KES")
+  
+  // Payment Gateway Refs
+  mpesaCode   String?
+  cybersourceTransactionId String?
+  
+  // Status
+  status      PaymentStatus @default(PENDING)
+  failureReason String?
+  
+  // Metadata
+  metadata    Json?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([orderId])
+  @@index([status])
+}
+
+// Analytics
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  eventType String   // page_view, product_view, add_to_cart, etc
+  eventData Json?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+model ProductAnalytics {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  views     Int      @default(0)
+  clicks    Int      @default(0)
+  purchases Int      @default(0)
+  revenue   Float    @default(0)
+  
+  date      DateTime
+  
+  @@unique([productId, date])
+  @@index([productId])
+}
+
+model PageAnalytics {
+  id        String   @id @default(cuid())
+  pagePath  String
+  
+  views     Int      @default(0)
+  visitors  Int      @default(0)
+  avgTime   Float    @default(0)
+  
+  date      DateTime
+  
+  @@unique([pagePath, date])
+  @@index([pagePath])
+}
+
+// Blog Models
+model Blog {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?   @db.Text
+  content     String    @db.Text   // Rich text content
+  
+  // Media
+  featuredImage String?
+  
+  // Metadata
+  author      String    @default("Ajabu Beads")
+  tags        String[]  @default([])
+  
+  // Status
+  isPublished Boolean   @default(true)  // Auto-approve
+  
+  // SEO
+  metaTitle   String?
+  metaDescription String?
+  metaKeywords String?
+  
+  // Tracking
+  views       Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+  
+  @@index([slug])
+  @@index([isPublished])
+  @@index([createdAt])
+}
+
+// Media stored locally under /public/uploads
+model Media {
+  id        String   @id @default(cuid())
+  fileName  String
+  url       String
+  mimeType  String?
+  size      Int?     // bytes
+  uploadedBy String?
+  createdAt DateTime @default(now())
+
+  @@index([fileName])
+  @@index([createdAt])
+}
+
+// Enums
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  MPESA
+  CYBERSOURCE
+  BANK_TRANSFER
+}

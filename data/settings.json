@@ -1,0 +1,10 @@
+{
+  "mpesaConsumerKey": "test-consumer-key",
+  "mpesaConsumerSecret": "test-consumer-secret",
+  "mpesaShortcode": "123456",
+  "mpesaPasskey": "test-passkey",
+  "mpesaCallbackUrl": "https://example.com/mpesa/callback",
+  "cybersourceMerchantKeyId": "test-key-id",
+  "cybersourceMerchantSecretKey": "test-secret-key",
+  "cybersourceWebhookSecret": "test-webhook-secret"
+}
