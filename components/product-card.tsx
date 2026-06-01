@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, Eye } from 'lucide-react';
 import { Button } from './ui/button';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ProductCardProps {
   id: string;
@@ -14,6 +14,8 @@ interface ProductCardProps {
   rating: number;
   reviews: number;
   onAddToCart?: (productId: string) => void;
+  onSave?: (productId: string) => Promise<void>;
+  isSaved?: boolean;
   showAddToCart?: boolean;
 }
 
@@ -25,10 +27,17 @@ export default function ProductCard({
   rating,
   reviews,
   onAddToCart,
+  onSave,
+  isSaved = false,
   showAddToCart = false,
 }: ProductCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(isSaved);
   const [isAdded, setIsAdded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setIsFavorite(isSaved);
+  }, [isSaved]);
 
   const handleAddToCart = () => {
     if (!onAddToCart) return;
@@ -52,12 +61,22 @@ export default function ProductCard({
         
         {/* Favorite Button */}
         <button
-          onClick={() => setIsFavorite(!isFavorite)}
+          onClick={async () => {
+            if (!onSave) {
+              setIsFavorite(!isFavorite);
+              return;
+            }
+            if (saving) return;
+            setSaving(true);
+            await onSave(id);
+            setIsFavorite(!isFavorite);
+            setSaving(false);
+          }}
           className="absolute top-3 right-3 p-2 rounded-full bg-background/90 hover:bg-background shadow-md transition-colors"
         >
           <Heart
             className={`w-5 h-5 transition-colors ${
-              isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground'
+              isFavorite || isSaved ? 'fill-primary text-primary' : 'text-muted-foreground'
             }`}
           />
         </button>

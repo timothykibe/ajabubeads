@@ -64,6 +64,8 @@ export interface Product {
   image?: string;
   images?: string[];
   category: string;
+  optionLabelA?: string;
+  optionLabelB?: string;
   colors?: string[];
   sizes?: string[];
   rating?: number;
@@ -92,6 +94,8 @@ export interface CreateProductRequest {
   costPrice?: number;
   sku: string;
   category: string;
+  optionLabelA?: string;
+  optionLabelB?: string;
   colors?: string[];
   sizes?: string[];
   stock: number;

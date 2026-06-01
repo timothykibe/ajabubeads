@@ -10,8 +10,17 @@ export async function GET(request: NextRequest) {
     const skip = parseInt(url.searchParams.get('skip') || '0');
     const take = parseInt(url.searchParams.get('take') || '10');
     const featured = url.searchParams.get('featured') === 'true';
+    const admin = url.searchParams.get('admin') === 'true';
 
     let result;
+    if (admin) {
+      // require admin auth for admin listing
+      const auth = await requireAdminAuth(request);
+      if (!auth.authenticated) return auth.response;
+      result = await blogService.getAllBlogsAdmin({ skip, take });
+      return apiResponse.success(result, 'Admin blogs retrieved');
+    }
+
     if (featured) {
       result = await blogService.getTrendingBlogs(take);
       return apiResponse.success(result, 'Featured blogs retrieved');

@@ -22,12 +22,14 @@ interface Product {
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<any[]>([]);
+  const [savedProductIds, setSavedProductIds] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [priceRange, setPriceRange] = useState([0, 5000]);
   const [sortBy, setSortBy] = useState('featured');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Fetch products from API
   useEffect(() => {
@@ -55,6 +57,19 @@ export default function Shop() {
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
+
+    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    setIsAuthenticated(!!accessToken);
+    if (accessToken) {
+      fetch('/api/user/saved-products', { headers: { Authorization: `Bearer ${accessToken}` } })
+        .then(async (res) => {
+          if (!res.ok) return [];
+          const data = await res.json();
+          return Array.isArray(data?.data?.items) ? data.data.items : [];
+        })
+        .then((saved: any[]) => setSavedProductIds(saved.map((item) => item.id)))
+        .catch(() => setSavedProductIds([]));
+    }
   }, []);
 
   const handleAddToCart = (productId: string) => {
@@ -76,6 +91,34 @@ export default function Shop() {
       localStorage.setItem('ajabuCart', JSON.stringify(updated));
       return updated;
     });
+  };
+
+  const handleToggleSavedProduct = async (productId: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    if (!token) {
+      window.location.href = `/login?redirect=/shop`;
+      return;
+    }
+
+    const isCurrentlySaved = savedProductIds.includes(productId);
+    const method = isCurrentlySaved ? 'DELETE' : 'POST';
+    const response = await fetch('/api/user/saved-products', {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ productId }),
+    });
+
+    if (response.ok) {
+      setSavedProductIds((prev) => {
+        if (isCurrentlySaved) {
+          return prev.filter((id) => id !== productId);
+        }
+        return [...prev, productId];
+      });
+    }
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -101,7 +144,7 @@ export default function Shop() {
     filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
   }
 
-  const categories = ['All', 'Bracelets'];
+  const categories = ['All', ...Array.from(new Set(products.map((product) => product.category)))];
 
   return (
     <main className="min-h-screen bg-background">
@@ -263,6 +306,8 @@ export default function Shop() {
                       rating={product.rating || 5}
                       reviews={product.reviewCount || 0}
                       onAddToCart={handleAddToCart}
+                      onSave={handleToggleSavedProduct}
+                      isSaved={savedProductIds.includes(product.id)}
                     />
                   ))}
                 </div>

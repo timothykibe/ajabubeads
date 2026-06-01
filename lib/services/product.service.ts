@@ -53,6 +53,8 @@ export const productService = {
     costPrice?: number;
     sku: string;
     category: string;
+    optionLabelA?: string;
+    optionLabelB?: string;
     colors?: string[];
     sizes?: string[];
     stock: number;
@@ -74,6 +76,8 @@ export const productService = {
       costPrice: data.costPrice,
       sku: data.sku,
       category: data.category,
+      optionLabelA: data.optionLabelA,
+      optionLabelB: data.optionLabelB,
       colors: data.colors || [],
       sizes: data.sizes || [],
       stock: data.stock,
@@ -82,7 +86,7 @@ export const productService = {
       metaTitle: data.metaTitle,
       metaDescription: data.metaDescription,
       inStock: data.stock > 0,
-    });
+    } as any);
   },
 
   // Update product (admin)
@@ -92,6 +96,8 @@ export const productService = {
     price: number;
     costPrice: number;
     category: string;
+    optionLabelA: string;
+    optionLabelB: string;
     colors: string[];
     sizes: string[];
     stock: number;
@@ -110,7 +116,7 @@ export const productService = {
     return productRepository.update(id, {
       ...data,
       inStock: (data.stock || product.stock) > 0,
-    });
+    } as any);
   },
 
   // Delete product (admin)

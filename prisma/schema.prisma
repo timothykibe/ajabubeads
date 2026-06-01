@@ -79,9 +79,11 @@ model Product {
   images      String[]  @default([])
   
   // Details
-  category    String
-  colors      String[]  @default([])
-  sizes       String[]  @default([])
+  category        String
+  optionLabelA    String?   @default("Type")
+  optionLabelB    String?   @default("Option")
+  colors          String[]  @default([])
+  sizes           String[]  @default([])
   
   // Inventory
   stock       Int       @default(0)

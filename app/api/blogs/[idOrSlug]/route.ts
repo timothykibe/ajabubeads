@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { blogService } from '@/lib/services/blog.service';
 import { apiResponse, handleApiError } from '@/lib/utils/api.response';
+import { requireAdminAuth } from '@/lib/utils/auth.middleware';
 
 // GET /api/blogs/[idOrSlug]
 export async function GET(
@@ -32,6 +33,9 @@ export async function PUT(
 ) {
   try {
     const { idOrSlug } = await context.params;
+    // Require admin auth for updates
+    const auth = await requireAdminAuth(request);
+    if (!auth.authenticated) return auth.response;
     const body = await request.json();
 
     const blog = await blogService.updateBlog(idOrSlug, {
@@ -61,6 +65,9 @@ export async function DELETE(
 ) {
   try {
     const { idOrSlug } = await context.params;
+    // Require admin auth for delete
+    const auth = await requireAdminAuth(request);
+    if (!auth.authenticated) return auth.response;
 
     await blogService.deleteBlog(idOrSlug);
 

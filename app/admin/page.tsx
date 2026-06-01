@@ -46,15 +46,16 @@ interface DashboardMetrics {
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardMetrics>({});
+  const [selectedDays, setSelectedDays] = useState(30);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         const token = localStorage.getItem('adminToken');
-        const response = await fetch('/api/admin/analytics', {
+        const response = await fetch(`/api/admin/analytics?type=dashboard&days=${selectedDays}`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -82,7 +83,7 @@ export default function AdminDashboard() {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [selectedDays]);
 
   const stats = [
     {
@@ -98,16 +99,16 @@ export default function AdminDashboard() {
       color: 'text-blue-600 bg-blue-100',
     },
     {
-      title: 'Chat Clicks',
-      value: data.metrics?.chatClicks || 0,
-      icon: MessageCircle,
-      color: 'text-emerald-600 bg-emerald-100',
+      title: 'Visits',
+      value: data.metrics?.pageViews || 0,
+      icon: TrendingUp,
+      color: 'text-violet-600 bg-violet-100',
     },
     {
-      title: 'Subscribers',
-      value: data.metrics?.subscriberCount || 0,
-      icon: ShieldCheck,
-      color: 'text-sky-600 bg-sky-100',
+      title: 'Unique Visitors',
+      value: data.metrics?.uniqueVisitors || 0,
+      icon: Users,
+      color: 'text-orange-600 bg-orange-100',
     },
   ];
 
@@ -125,6 +126,27 @@ export default function AdminDashboard() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-600 mt-1">Welcome back to Ajabu Beads Admin Portal</p>
+      </div>
+
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">View analytics for a specific range.</p>
+        </div>
+        <div className="inline-flex flex-wrap gap-2">
+          {[{ days: 30, label: 'This month' }, { days: 90, label: 'Last 3 months' }, { days: 365, label: 'This year' }].map((option) => (
+            <button
+              key={option.days}
+              onClick={() => setSelectedDays(option.days)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                selectedDays === option.days
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background border border-border text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Stats Grid */}

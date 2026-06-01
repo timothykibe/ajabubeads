@@ -9,6 +9,7 @@ import ProductCard from '@/components/product-card';
 import HeroSlider from '@/components/hero-slider';
 import NewsletterPopup from '@/components/newsletter-popup';
 import { Button } from '@/components/ui/button';
+import { apiClient } from '@/lib/api-client';
 import { ShoppingCart, Heart, Truck, Zap } from 'lucide-react';
 
 interface Product {
@@ -57,6 +58,45 @@ export default function Home() {
       setCart(JSON.parse(savedCart));
     }
     setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      if (typeof window === 'undefined') return;
+
+      const accessToken = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!accessToken && !refreshToken) {
+        return;
+      }
+
+      const profileResponse = await apiClient.auth.getProfile();
+      const authError = profileResponse.error?.toLowerCase() || '';
+
+      if (profileResponse.success && profileResponse.data) {
+        apiClient.setUser(profileResponse.data);
+        return;
+      }
+
+      if (refreshToken && (authError.includes('unauthorized') || authError.includes('invalid') || !accessToken)) {
+        const refreshResult = await apiClient.refreshAccessToken();
+        if (refreshResult) {
+          const refreshedProfile = await apiClient.auth.getProfile();
+          if (refreshedProfile.success && refreshedProfile.data) {
+            apiClient.setUser(refreshedProfile.data);
+            return;
+          }
+        }
+      }
+
+      if (authError.includes('unauthorized') || authError.includes('invalid')) {
+        apiClient.clearAccessToken();
+        apiClient.clearRefreshToken();
+        apiClient.clearUser();
+      }
+    };
+
+    checkAuthStatus();
   }, []);
 
   const handleNewsletterSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

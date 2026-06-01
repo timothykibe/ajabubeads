@@ -34,6 +34,8 @@ interface Product {
   reviewCount: number;
   category: string;
   inStock: boolean;
+  optionLabelA?: string;
+  optionLabelB?: string;
 }
 
 interface CartItem extends Product {
@@ -99,19 +101,41 @@ export default function ProductPage() {
     if (savedCart) {
       setCart(JSON.parse(savedCart));
     }
-    setIsAuthenticated(
-      typeof window !== 'undefined' && !!localStorage.getItem('accessToken')
-    );
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    setIsAuthenticated(!!token);
 
-    const savedProducts = localStorage.getItem('ajabuSavedProducts');
-    if (savedProducts && product) {
-      try {
-        const savedArray = JSON.parse(savedProducts) as Array<{ id: string }>;
-        setIsSaved(savedArray.some((item) => item.id === product.id));
-      } catch {
-        setIsSaved(false);
+    const loadSavedState = async () => {
+      if (token && product) {
+        try {
+          const res = await fetch('/api/user/saved-products', {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const saved = Array.isArray(data?.data?.items) ? data.data.items : [];
+            setIsSaved(saved.some((item: any) => item.id === product.id));
+            localStorage.setItem('ajabuSavedProducts', JSON.stringify(saved));
+            return;
+          }
+        } catch {
+          // fallback to localStorage
+        }
       }
-    }
+
+      const savedProducts = localStorage.getItem('ajabuSavedProducts');
+      if (savedProducts && product) {
+        try {
+          const savedArray = JSON.parse(savedProducts) as Array<{ id: string }>;
+          setIsSaved(savedArray.some((item) => item.id === product.id));
+        } catch {
+          setIsSaved(false);
+        }
+      }
+    };
+
+    loadSavedState();
   }, [product]);
 
   // Listen for auth changes so UI updates when user logs in/out
@@ -157,11 +181,17 @@ export default function ProductPage() {
     }
 
     const existingIndex = savedProducts.findIndex((item) => item.id === product.id);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    if (!token) {
+      setError('Please log in to save products.');
+      return;
+    }
+
     try {
       if (existingIndex >= 0) {
         await fetch('/api/user/saved-products', {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ productId: product.id }),
         });
         savedProducts.splice(existingIndex, 1);
@@ -170,7 +200,7 @@ export default function ProductPage() {
       } else {
         await fetch('/api/user/saved-products', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ productId: product.id }),
         });
         savedProducts.push({
@@ -184,6 +214,8 @@ export default function ProductPage() {
       }
 
       localStorage.setItem(savedKey, JSON.stringify(savedProducts));
+      // notify same-tab listeners that saved products changed
+      try { window.dispatchEvent(new Event('ajabuSavedProductsChanged')); } catch {}
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       console.error('Error updating saved products:', err);
@@ -396,7 +428,7 @@ export default function ProductPage() {
             {product.colors && product.colors.length > 0 && (
               <div>
                 <label className="block text-sm font-semibold mb-3">
-                  Color
+                  {product.optionLabelA || 'Color'}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {product.colors.map((color) => (
@@ -420,7 +452,7 @@ export default function ProductPage() {
             {product.sizes && product.sizes.length > 0 && (
               <div>
                 <label className="block text-sm font-semibold mb-3">
-                  Size
+                  {product.optionLabelB || 'Size'}
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {product.sizes.map((size) => (

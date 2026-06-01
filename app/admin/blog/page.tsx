@@ -30,7 +30,13 @@ export default function AdminBlogPage() {
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/blogs?take=100');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+      const headers: any = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const response = await fetch('/api/blogs?take=100&admin=true', { headers });
+      if (!response.ok) {
+        throw new Error('Failed to fetch blogs');
+      }
       const data = await response.json();
       setBlogs(data.data.blogs || data.data || []);
     } catch (error) {

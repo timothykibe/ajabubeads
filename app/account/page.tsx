@@ -21,6 +21,7 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [savedProducts, setSavedProducts] = useState<SavedProduct[]>([]);
+  const [selectedSection, setSelectedSection] = useState<'overview' | 'orders' | 'saved' | 'kyc'>('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -73,6 +74,24 @@ export default function AccountPage() {
     fetchData();
 
     // saved products are loaded from backend in fetchData
+    const handleSavedUpdated = async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (!token) return;
+      try {
+        const savedRes = await fetch('/api/user/saved-products', { headers: { Authorization: `Bearer ${token}` } });
+        if (savedRes.ok) {
+          const savedData = await savedRes.json();
+          setSavedProducts(savedData.data?.items || []);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    window.addEventListener('ajabuSavedProductsChanged', handleSavedUpdated as EventListener);
+    return () => {
+      window.removeEventListener('ajabuSavedProductsChanged', handleSavedUpdated as EventListener);
+    };
   }, [router]);
 
   const formatDate = (dateString: string) => {
@@ -112,153 +131,271 @@ export default function AccountPage() {
             {error}
           </div>
         ) : (
-          <div className="mt-10 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-            <div className="space-y-8">
-              <section className="rounded-3xl border border-border bg-card p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.2em] text-primary">Profile</p>
-                    <h2 className="text-2xl font-semibold">Account details</h2>
-                  </div>
-                  <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                    <CheckCircle className="h-4 w-4" />
-                    Verified
-                  </div>
-                </div>
+          <div className="mt-10 grid gap-8 lg:grid-cols-[280px_1fr]">
+            <aside className="space-y-6 rounded-3xl border border-border bg-card p-6">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-primary">My Account</p>
+                <h2 className="mt-3 text-2xl font-semibold">Quick menu</h2>
+                <p className="text-sm text-muted-foreground mt-2">Manage orders, saved items, and profile settings all from one place.</p>
+              </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 mt-6">
-                  <div className="rounded-3xl border border-border bg-background p-5">
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="mt-2 font-semibold">{profile?.name || 'Not set'}</p>
-                  </div>
-                  <div className="rounded-3xl border border-border bg-background p-5">
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="mt-2 font-semibold">{profile?.email}</p>
-                  </div>
-                  <div className="rounded-3xl border border-border bg-background p-5">
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="mt-2 font-semibold">{profile?.phone || 'Not set'}</p>
-                  </div>
-                  <div className="rounded-3xl border border-border bg-background p-5">
-                    <p className="text-sm text-muted-foreground">Location</p>
-                    <p className="mt-2 font-semibold">
-                      {profile?.city || 'City'}, {profile?.country || 'Kenya'}
+              <div className="space-y-2">
+                {[
+                  { key: 'overview', label: 'Overview' },
+                  { key: 'orders', label: 'Order history' },
+                  { key: 'saved', label: 'Saved products' },
+                  { key: 'kyc', label: 'KYC & verification' },
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => setSelectedSection(item.key as any)}
+                    className={`w-full text-left rounded-3xl px-4 py-4 transition-colors border border-border ${
+                      selectedSection === item.key
+                        ? 'bg-primary/10 text-primary border-primary'
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    <span className="font-medium">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="rounded-3xl border border-border bg-background p-5">
+                <p className="text-sm text-muted-foreground">Need help?</p>
+                <p className="mt-3 text-sm text-foreground">Contact support at <strong>support@ajabubeads.co.ke</strong> for account or order assistance.</p>
+              </div>
+            </aside>
+
+            <section className="space-y-6">
+              <div className="rounded-3xl border border-border bg-card p-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.2em] text-primary">Account overview</p>
+                    <h1 className="text-4xl font-serif font-bold">{profile?.name ? `Welcome back, ${profile.name}` : 'Welcome back'}</h1>
+                    <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                      Manage your orders, saved products and profile details from a single dashboard.
                     </p>
                   </div>
-                </div>
-              </section>
-
-              <section className="rounded-3xl border border-border bg-card p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.2em] text-primary">Order History</p>
-                    <h2 className="text-2xl font-semibold">Recent orders</h2>
-                  </div>
-                  <Link href="/orders" className="text-sm text-primary hover:underline">
-                    View all orders
-                  </Link>
-                </div>
-
-                {orders.length === 0 ? (
-                  <div className="mt-8 rounded-3xl border border-border bg-background p-8 text-center text-muted-foreground">
-                    No orders found yet. Place your first order and track it from here.
-                  </div>
-                ) : (
-                  <div className="mt-6 space-y-4">
-                    {orders.slice(0, 5).map((order) => (
-                      <div key={order.id} className="rounded-3xl border border-border bg-background p-5">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <p className="text-sm text-muted-foreground">Order #{order.orderNumber}</p>
-                            <p className="mt-1 text-lg font-semibold">{formatDate(order.createdAt)}</p>
-                          </div>
-                          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
-                            <Clock className="h-4 w-4" />
-                            {order.status.toLowerCase()}
-                          </div>
-                        </div>
-                        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="text-sm text-muted-foreground">
-                            {order.items.length} items · KES {order.total.toLocaleString()}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Payment: {order.paymentStatus.toLowerCase()}
-                          </div>
-                        </div>
-                        <Link href={`/order-confirmation?orderId=${order.id}`} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
-                          <ShoppingBag className="h-4 w-4" />
-                          Track order
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-            </div>
-
-            <aside className="space-y-8">
-              <section className="rounded-3xl border border-border bg-card p-6">
-                <div className="flex items-center gap-3">
-                  <Heart className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.2em] text-primary">Saved</p>
-                    <h2 className="text-xl font-semibold">Saved products</h2>
-                  </div>
-                </div>
-
-                {savedProducts.length === 0 ? (
-                  <div className="mt-6 rounded-3xl border border-dashed border-border/70 bg-background p-6 text-center text-muted-foreground">
-                    <p className="mb-3">Save items from product pages and they will appear here.</p>
+                  <div className="flex flex-wrap gap-3">
                     <Link href="/shop">
-                      <Button variant="outline" className="mt-2">
-                        Browse products
-                      </Button>
+                      <Button variant="outline">Continue shopping</Button>
+                    </Link>
+                    <Link href="/cart">
+                      <Button>View cart</Button>
                     </Link>
                   </div>
-                ) : (
-                  <div className="mt-6 space-y-4">
-                    {savedProducts.slice(0, 5).map((product) => (
-                      <Link key={product.id} href={`/product/${product.id}`} className="group block rounded-3xl border border-border bg-background overflow-hidden transition hover:shadow-lg">
-                        <div className="flex items-center gap-4 p-4">
-                          <div className="relative h-20 w-20 overflow-hidden rounded-3xl bg-muted">
-                            <img
-                              src={product.image || '/placeholder.png'}
-                              alt={product.name}
-                              className="h-full w-full object-cover"
-                            />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
+                  <div className="flex items-center gap-3 text-primary">
+                    <PackageCheck className="h-5 w-5" />
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.2em]">Orders</p>
+                      <p className="mt-2 text-3xl font-semibold">{orders.length}</p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground">See recent orders and view shipping status.</p>
+                </div>
+                <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
+                  <div className="flex items-center gap-3 text-primary">
+                    <Heart className="h-5 w-5" />
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.2em]">Saved items</p>
+                      <p className="mt-2 text-3xl font-semibold">{savedProducts.length}</p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground">Your wishlist is synced across product pages and account view.</p>
+                </div>
+                <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
+                  <div className="flex items-center gap-3 text-primary">
+                    <CheckCircle className="h-5 w-5" />
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.2em]">KYC status</p>
+                      <p className="mt-2 text-3xl font-semibold text-emerald-600">
+                        {profile?.phone && profile?.address && profile?.city ? 'Verified' : 'Pending'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground">Complete your profile to improve checkout speed and security.</p>
+                </div>
+              </div>
+
+              {selectedSection === 'overview' && (
+                <div className="space-y-6">
+                  <section className="rounded-3xl border border-border bg-card p-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm uppercase tracking-[0.2em] text-primary">Profile</p>
+                        <h2 className="text-2xl font-semibold">Account details</h2>
+                      </div>
+                      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+                        <CheckCircle className="h-4 w-4" />
+                        {profile?.phone && profile?.address && profile?.city ? 'Verified' : 'Update required'}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 mt-6">
+                      <div className="rounded-3xl border border-border bg-background p-5">
+                        <p className="text-sm text-muted-foreground">Name</p>
+                        <p className="mt-2 font-semibold">{profile?.name || 'Not set'}</p>
+                      </div>
+                      <div className="rounded-3xl border border-border bg-background p-5">
+                        <p className="text-sm text-muted-foreground">Email</p>
+                        <p className="mt-2 font-semibold">{profile?.email}</p>
+                      </div>
+                      <div className="rounded-3xl border border-border bg-background p-5">
+                        <p className="text-sm text-muted-foreground">Phone</p>
+                        <p className="mt-2 font-semibold">{profile?.phone || 'Not set'}</p>
+                      </div>
+                      <div className="rounded-3xl border border-border bg-background p-5">
+                        <p className="text-sm text-muted-foreground">Location</p>
+                        <p className="mt-2 font-semibold">{profile?.city || 'City'}, {profile?.country || 'Kenya'}</p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="rounded-3xl border border-border bg-card p-6">
+                    <h2 className="text-2xl font-semibold">Recent activity</h2>
+                    <p className="text-sm text-muted-foreground mt-2">Your latest orders, saved items and account status in one place.</p>
+                  </section>
+                </div>
+              )}
+
+              {selectedSection === 'orders' && (
+                <section className="rounded-3xl border border-border bg-card p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.2em] text-primary">Order history</p>
+                      <h2 className="text-2xl font-semibold">Recent orders</h2>
+                    </div>
+                    <Link href="/orders" className="text-sm text-primary hover:underline">
+                      View all orders
+                    </Link>
+                  </div>
+
+                  {orders.length === 0 ? (
+                    <div className="mt-8 rounded-3xl border border-border bg-background p-8 text-center text-muted-foreground">
+                      No orders found yet. Place your first order and track it from here.
+                    </div>
+                  ) : (
+                    <div className="mt-6 space-y-4">
+                      {orders.map((order) => (
+                        <div key={order.id} className="rounded-3xl border border-border bg-background p-5">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="text-sm text-muted-foreground">Order #{order.orderNumber}</p>
+                              <p className="mt-1 text-lg font-semibold">{formatDate(order.createdAt)}</p>
+                            </div>
+                            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
+                              <Clock className="h-4 w-4" />
+                              {order.status.toLowerCase()}
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold">{product.name}</p>
-                            <p className="text-sm text-muted-foreground">KES {product.price.toLocaleString()}</p>
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm text-muted-foreground">
+                            <div>{order.items.length} items · KES {order.total.toLocaleString()}</div>
+                            <div>Payment: {order.paymentStatus.toLowerCase()}</div>
+                          </div>
+                          <div className="mt-4 flex flex-wrap items-center gap-3">
+                            <Link href={`/order-confirmation?orderId=${order.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+                              <ShoppingBag className="h-4 w-4" />
+                              Track order
+                            </Link>
+                            <Link href={`/orders`} className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20">
+                              View all orders
+                            </Link>
                           </div>
                         </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </section>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
 
-              <section className="rounded-3xl border border-border bg-card p-6">
-                <div className="flex items-center gap-3">
-                  <PackageCheck className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.2em] text-primary">Quick access</p>
-                    <h2 className="text-xl font-semibold">Account shortcuts</h2>
+              {selectedSection === 'saved' && (
+                <section className="rounded-3xl border border-border bg-card p-6">
+                  <div className="flex items-center gap-3">
+                    <Heart className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.2em] text-primary">Saved products</p>
+                      <h2 className="text-xl font-semibold">Your wishlist</h2>
+                    </div>
                   </div>
-                </div>
-                <div className="mt-6 grid gap-3">
-                  <Link href="/account" className="rounded-3xl border border-border bg-background px-4 py-4 text-sm font-medium hover:bg-muted">
-                    View account dashboard
-                  </Link>
-                  <Link href="/shop" className="rounded-3xl border border-border bg-background px-4 py-4 text-sm font-medium hover:bg-muted">
-                    Continue shopping
-                  </Link>
-                  <Link href="/cart" className="rounded-3xl border border-border bg-background px-4 py-4 text-sm font-medium hover:bg-muted">
-                    Go to cart
-                  </Link>
-                </div>
-              </section>
-            </aside>
+
+                  {savedProducts.length === 0 ? (
+                    <div className="mt-6 rounded-3xl border border-dashed border-border/70 bg-background p-6 text-center text-muted-foreground">
+                      <p className="mb-3">Save products while browsing and return to them here.</p>
+                      <Link href="/shop">
+                        <Button variant="outline" className="mt-2">
+                          Browse products
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="mt-6 grid gap-4">
+                      {savedProducts.map((product) => (
+                        <div key={product.id} className="group rounded-3xl border border-border bg-background p-4 transition hover:shadow-lg">
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="h-20 w-20 overflow-hidden rounded-3xl bg-muted">
+                                <img src={product.image || '/placeholder.png'} alt={product.name} className="h-full w-full object-cover" />
+                              </div>
+                              <div>
+                                <p className="font-semibold">{product.name}</p>
+                                <p className="text-sm text-muted-foreground">KES {product.price.toLocaleString()}</p>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Link href={`/product/${product.id}`} className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20">
+                                View product
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {selectedSection === 'kyc' && (
+                <section className="rounded-3xl border border-border bg-card p-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.2em] text-primary">KYC & verification</p>
+                      <h2 className="text-2xl font-semibold">Identity status</h2>
+                    </div>
+                    <span className={`rounded-full px-4 py-2 text-sm font-medium ${profile?.phone && profile?.address && profile?.city ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                      {profile?.phone && profile?.address && profile?.city ? 'Verified' : 'Pending'}
+                    </span>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2 mt-6">
+                    <div className="rounded-3xl border border-border bg-background p-5">
+                      <p className="text-sm text-muted-foreground">ID / Profile</p>
+                      <p className="mt-2 font-semibold">{profile?.phone ? 'Phone linked' : 'Phone missing'}</p>
+                    </div>
+                    <div className="rounded-3xl border border-border bg-background p-5">
+                      <p className="text-sm text-muted-foreground">Address</p>
+                      <p className="mt-2 font-semibold">{profile?.address ? 'Address on file' : 'No address yet'}</p>
+                    </div>
+                    <div className="rounded-3xl border border-border bg-background p-5">
+                      <p className="text-sm text-muted-foreground">City</p>
+                      <p className="mt-2 font-semibold">{profile?.city || 'Not provided'}</p>
+                    </div>
+                    <div className="rounded-3xl border border-border bg-background p-5">
+                      <p className="text-sm text-muted-foreground">Country</p>
+                      <p className="mt-2 font-semibold">{profile?.country || 'Kenya'}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 rounded-3xl border border-dashed border-border/70 bg-background p-6 text-sm text-muted-foreground">
+                    Add more profile details to improve account security and checkout speed.
+                  </div>
+                </section>
+              )}
+            </section>
           </div>
         )}
       </div>

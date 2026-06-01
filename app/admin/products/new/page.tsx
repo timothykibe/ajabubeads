@@ -13,10 +13,12 @@ export default function NewProductPage() {
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
-  const [colors, setColors] = useState<string[]>([]);
-  const [sizes, setSizes] = useState<string[]>([]);
-  const [newColor, setNewColor] = useState('');
-  const [newSize, setNewSize] = useState('');
+  const [optionLabelA, setOptionLabelA] = useState('Type');
+  const [optionLabelB, setOptionLabelB] = useState('Option');
+  const [optionValuesA, setOptionValuesA] = useState<string[]>([]);
+  const [optionValuesB, setOptionValuesB] = useState<string[]>([]);
+  const [newOptionA, setNewOptionA] = useState('');
+  const [newOptionB, setNewOptionB] = useState('');
   const [saving, setSaving] = useState(false);
 
   const uploadFile = async (file: File) => {
@@ -35,11 +37,6 @@ export default function NewProductPage() {
     if (url) setImages((s) => [...s, url]);
   };
 
-  const handleAddOption = (setter: any, value: string) => {
-    if (!value) return;
-    setter((arr: string[]) => [...arr, value]);
-  };
-
   const handleSubmit = async () => {
     setSaving(true);
     try {
@@ -50,9 +47,11 @@ export default function NewProductPage() {
         price: Number(price),
         sku,
         category,
+        optionLabelA,
+        optionLabelB,
         slug: (name || '').toLowerCase().replace(/\s+/g, '-'),
-        colors,
-        sizes,
+        colors: optionValuesA,
+        sizes: optionValuesB,
         stock: Number(stock),
         images,
       };
@@ -111,27 +110,49 @@ export default function NewProductPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium">Colors</label>
-          <div className="flex gap-2 mt-2">
-            <input value={newColor} onChange={(e) => setNewColor(e.target.value)} placeholder="Add color" className="border rounded px-3 py-2" />
-            <button onClick={() => { handleAddOption(setColors, newColor); setNewColor(''); }} className="px-3 py-2 bg-primary text-white rounded">Add</button>
+          <label className="text-sm font-medium">Option name</label>
+          <input value={optionLabelA} onChange={(e) => setOptionLabelA(e.target.value)} className="w-full border rounded px-3 py-2 mt-2" placeholder="e.g. Type, Material" />
+          <div className="flex gap-2 mt-4">
+            <input value={newOptionA} onChange={(e) => setNewOptionA(e.target.value)} placeholder="Add option value" className="flex-1 border rounded px-3 py-2" />
+            <button
+              type="button"
+              onClick={() => {
+                if (!newOptionA.trim()) return;
+                setOptionValuesA((prev) => [...prev, newOptionA.trim()]);
+                setNewOptionA('');
+              }}
+              className="px-3 py-2 bg-primary text-white rounded"
+            >
+              Add
+            </button>
           </div>
           <div className="flex gap-2 mt-2 flex-wrap">
-            {colors.map((c, i) => (
-              <span key={i} className="px-2 py-1 bg-gray-100 rounded">{c}</span>
+            {optionValuesA.map((value, i) => (
+              <span key={i} className="px-2 py-1 bg-gray-100 rounded">{value}</span>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="text-sm font-medium">Sizes</label>
-          <div className="flex gap-2 mt-2">
-            <input value={newSize} onChange={(e) => setNewSize(e.target.value)} placeholder="Add size" className="border rounded px-3 py-2" />
-            <button onClick={() => { handleAddOption(setSizes, newSize); setNewSize(''); }} className="px-3 py-2 bg-primary text-white rounded">Add</button>
+          <label className="text-sm font-medium">Second option</label>
+          <input value={optionLabelB} onChange={(e) => setOptionLabelB(e.target.value)} className="w-full border rounded px-3 py-2 mt-2" placeholder="e.g. Size, Finish" />
+          <div className="flex gap-2 mt-4">
+            <input value={newOptionB} onChange={(e) => setNewOptionB(e.target.value)} placeholder="Add option value" className="flex-1 border rounded px-3 py-2" />
+            <button
+              type="button"
+              onClick={() => {
+                if (!newOptionB.trim()) return;
+                setOptionValuesB((prev) => [...prev, newOptionB.trim()]);
+                setNewOptionB('');
+              }}
+              className="px-3 py-2 bg-primary text-white rounded"
+            >
+              Add
+            </button>
           </div>
           <div className="flex gap-2 mt-2 flex-wrap">
-            {sizes.map((s, i) => (
-              <span key={i} className="px-2 py-1 bg-gray-100 rounded">{s}</span>
+            {optionValuesB.map((value, i) => (
+              <span key={i} className="px-2 py-1 bg-gray-100 rounded">{value}</span>
             ))}
           </div>
         </div>
