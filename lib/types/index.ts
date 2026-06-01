@@ -141,9 +141,11 @@ export interface CreateOrderRequest {
 
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
-export type PaymentMethod = 'MPESA' | 'CYBERSOURCE' | 'BANK_TRANSFER';
+export type PaymentMethod = 'MPESA' | 'CYBERSOURCE' | 'BANK_TRANSFER' | 'PICKUP';
+export type OrderType = 'DELIVERY' | 'SELF_PICKUP';
 
 export interface Order {
+  orderType: OrderType;
   id: string;
   orderNumber: string;
   userId: string;

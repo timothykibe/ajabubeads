@@ -173,6 +173,34 @@ export default function AdminDashboard() {
         })}
       </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Support Leads</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">KYC Requests</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">
+                {data.metrics?.kycRequests || 0}
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Chat Button Clicks</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">
+                {data.metrics?.chatClicks || 0}
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Subscribers</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">
+                {data.metrics?.subscriberCount || 0}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sales Chart */}

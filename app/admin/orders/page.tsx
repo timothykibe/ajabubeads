@@ -29,6 +29,7 @@ interface Order {
   total: number;
   status: string;
   paymentStatus: string;
+  orderType?: 'DELIVERY' | 'SELF_PICKUP';
   createdAt: string;
 }
 
@@ -192,6 +193,7 @@ export default function OrdersPage() {
                   <TableHead>Email</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Order Type</TableHead>
                   <TableHead>Payment</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -218,6 +220,9 @@ export default function OrdersPage() {
                         </span>
                       </div>
                     </TableCell>
+                    <TableCell className="text-sm text-gray-700">
+                      {order.orderType === 'SELF_PICKUP' ? 'Self Pickup' : 'Delivery'}
+                    </TableCell>
                     <TableCell>
                       <span
                         className={`px-2 py-1 text-sm rounded ${
@@ -233,9 +238,11 @@ export default function OrdersPage() {
                       {new Date(order.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
-                        <Eye size={16} />
-                      </Button>
+                      <Link href={`/admin/orders/${order.id}`}>
+                        <Button variant="ghost" size="sm">
+                          <Eye size={16} />
+                        </Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}

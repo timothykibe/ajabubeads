@@ -19,7 +19,9 @@ export const orderService = {
       city: string;
       postalCode: string;
       country?: string;
-    }
+    },
+    paymentMethod: string = 'MPESA',
+    orderType: string = 'DELIVERY'
   ): Promise<any> {
     try {
       // Validate cart items and get prices
@@ -47,7 +49,7 @@ export const orderService = {
       }
 
       // Calculate shipping and tax
-      const shipping = subtotal > 5000 ? 0 : 500;
+      const shipping = orderType === 'SELF_PICKUP' ? 0 : subtotal > 5000 ? 0 : 500;
       const tax = Math.round(subtotal * 0.16); // 16% VAT
       const total = subtotal + shipping + tax;
 
@@ -71,20 +73,21 @@ export const orderService = {
         shipping,
         total,
         status: 'PENDING',
-        paymentStatus: 'PENDING',
-        paymentMethod: 'MPESA', // Default to M-Pesa
+        paymentStatus: paymentMethod === 'PICKUP' ? 'PENDING' : 'PENDING',
+        paymentMethod: paymentMethod as any,
+        orderType: orderType as any,
         items: {
           create: orderItems,
         },
       });
 
-      // Create payment record
+      // Create payment record only for delayed pickup or payment methods
       const payment = await paymentRepository.create({
         order: { connect: { id: order.id } },
-        method: 'MPESA',
-        amount: total,
+        method: paymentMethod as any,
+        amount: paymentMethod === 'PICKUP' ? 0 : total,
         currency: 'KES',
-        status: 'PENDING',
+        status: paymentMethod === 'PICKUP' ? 'PENDING' : 'PENDING',
       });
 
       // Update product stocks
@@ -116,7 +119,8 @@ export const orderService = {
       postalCode: string;
       country?: string;
     },
-    paymentMethod: PaymentMethod = 'MPESA'
+    paymentMethod: PaymentMethod = 'MPESA',
+    orderType: 'DELIVERY' | 'SELF_PICKUP' = 'DELIVERY'
   ): Promise<any> {
     try {
       let subtotal = 0;
@@ -149,7 +153,7 @@ export const orderService = {
         });
       }
 
-      const shipping = subtotal > 5000 ? 0 : 500;
+      const shipping = orderType === 'SELF_PICKUP' ? 0 : subtotal > 5000 ? 0 : 500;
       const tax = Math.round(subtotal * 0.16);
       const total = subtotal + shipping + tax;
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
@@ -170,8 +174,9 @@ export const orderService = {
         shipping,
         total,
         status: 'PENDING',
-        paymentStatus: 'PENDING',
+        paymentStatus: paymentMethod === 'PICKUP' ? 'PENDING' : 'PENDING',
         paymentMethod,
+        orderType,
         items: {
           create: orderItems,
         },
@@ -180,7 +185,7 @@ export const orderService = {
       const payment = await paymentRepository.create({
         order: { connect: { id: order.id } },
         method: paymentMethod,
-        amount: total,
+        amount: paymentMethod === 'PICKUP' ? 0 : total,
         currency: 'KES',
         status: 'PENDING',
       });

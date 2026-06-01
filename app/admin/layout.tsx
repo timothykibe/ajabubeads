@@ -40,11 +40,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       icon: BookOpen,
     },
     {
-      label: 'Media',
-      href: '/admin/media',
-      icon: BookOpen,
-    },
-    {
       label: 'Orders',
       href: '/admin/orders',
       icon: ShoppingCart,

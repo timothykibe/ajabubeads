@@ -17,6 +17,7 @@ type Order = {
   total: number;
   status: string;
   paymentStatus: string;
+  orderType?: 'DELIVERY' | 'SELF_PICKUP';
   createdAt: string;
 };
 
@@ -136,8 +137,8 @@ export default function OrderConfirmationClient() {
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-2">Estimated Delivery</p>
-                <p className="font-medium">{estimatedDelivery}</p>
+                <p className="text-sm text-muted-foreground mb-2">Order Type</p>
+                <p className="font-medium">{order.orderType === 'SELF_PICKUP' ? 'Self Pickup' : 'Delivery'}</p>
               </div>
             </div>
 
@@ -152,31 +153,43 @@ export default function OrderConfirmationClient() {
                 <div className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0 mt-0.5">✓</div>
                   <div>
-                    <p className="font-medium">Payment Confirmed</p>
-                    <p className="text-muted-foreground text-xs">Your M-Pesa payment has been processed</p>
+                    <p className="font-medium">Order Confirmed</p>
+                    <p className="text-muted-foreground text-xs">
+                      {order.orderType === 'SELF_PICKUP'
+                        ? 'Your pickup order is confirmed. We will share pickup details via email and WhatsApp shortly.'
+                        : 'Your payment has been processed and your order is being prepared.'}
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full bg-secondary text-foreground text-xs flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
                   <div>
-                    <p className="font-medium">Order Processing</p>
-                    <p className="text-muted-foreground text-xs">Your items are being carefully prepared and packaged</p>
+                    <p className="font-medium">{order.orderType === 'SELF_PICKUP' ? 'Ready for Pickup' : 'Order Processing'}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {order.orderType === 'SELF_PICKUP'
+                        ? 'Your items will be prepared for collection at our pickup location.'
+                        : 'Your items are being carefully packaged for delivery.'}
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full bg-secondary text-foreground text-xs flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
                   <div>
-                    <p className="font-medium">Shipped</p>
-                    <p className="text-muted-foreground text-xs">Track your order with the tracking number sent via email</p>
+                    <p className="font-medium">{order.orderType === 'SELF_PICKUP' ? 'Pickup Ready' : 'Shipped'}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {order.orderType === 'SELF_PICKUP'
+                        ? 'Collect your order from the store after receiving pickup confirmation.'
+                        : 'You will receive tracking details once your order ships.'}
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full bg-secondary text-foreground text-xs flex items-center justify-center flex-shrink-0 mt-0.5">4</div>
                   <div>
-                    <p className="font-medium">Delivered</p>
+                    <p className="font-medium">{order.orderType === 'SELF_PICKUP' ? 'Enjoy Your Pickup' : 'Delivered'}</p>
                     <p className="text-muted-foreground text-xs">Receive and enjoy your beautiful Ajabu Beads</p>
                   </div>
                 </div>

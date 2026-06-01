@@ -113,7 +113,7 @@ export default function AdminSettingsPage() {
         if (!res.ok) {
           throw new Error(result.error || 'Unable to load users');
         }
-        setUsers(result.data?.users || []);
+        setUsers((result.data?.users || []).filter((user: any) => user.isAdmin || user.isSuperAdmin));
       } catch (error: any) {
         setUserError(error.message || 'Failed to load users');
       } finally {

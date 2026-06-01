@@ -10,31 +10,49 @@ export const productRepository = {
     search?: string;
     featured?: boolean;
   } = {}) {
-    const { skip = 0, take = 12, category, search, featured } = options;
+    const skip = Math.max(0, parseInt(String(options.skip || 0)));
+    const take = Math.min(Math.max(1, parseInt(String(options.take || 12))), 100);
+    const category = options.category?.trim() || undefined;
+    const search = options.search?.trim().substring(0, 100) || undefined;
+    const { featured } = options;
 
     const where: Prisma.ProductWhereInput = {
       isActive: true,
-      ...(category && { category }),
+      ...(category && { category: { equals: category } }),
       ...(featured && { isFeatured: true }),
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
           { description: { contains: search, mode: 'insensitive' } },
+          { sku: { contains: search, mode: 'insensitive' } },
         ],
       }),
     };
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
+    try {
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          skip,
+          take,
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.product.count({ where }),
+      ]);
+
+      return { products, total, pages: Math.ceil(total / take) };
+    } catch (error) {
+      console.error('Product repository error:', {
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.product.count({ where }),
-    ]);
-
-    return { products, total, pages: Math.ceil(total / take) };
+        category,
+        search,
+        featured,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
   },
 
   // Get single product by ID

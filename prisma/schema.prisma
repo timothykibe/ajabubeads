@@ -80,8 +80,6 @@ model Product {
   
   // Details
   category        String
-  optionLabelA    String?   @default("Type")
-  optionLabelB    String?   @default("Option")
   colors          String[]  @default([])
   sizes           String[]  @default([])
   
@@ -177,6 +175,7 @@ model Order {
   status      OrderStatus @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
   paymentMethod PaymentMethod
+  orderType   OrderType  @default(DELIVERY)
   
   // Timestamps
   createdAt   DateTime  @default(now())
@@ -354,4 +353,10 @@ enum PaymentMethod {
   MPESA
   CYBERSOURCE
   BANK_TRANSFER
+  PICKUP
+}
+
+enum OrderType {
+  DELIVERY
+  SELF_PICKUP
 }

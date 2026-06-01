@@ -20,7 +20,8 @@ export default function CheckoutPage() {
   });
 
   const [step, setStep] = useState<'shipping' | 'payment' | 'confirmation'>('shipping');
-  const [paymentMethod, setPaymentMethod] = useState<'MPESA' | 'CYBERSOURCE'>('MPESA');
+  const [paymentMethod, setPaymentMethod] = useState<'MPESA' | 'CYBERSOURCE' | 'PICKUP'>('MPESA');
+  const [orderType, setOrderType] = useState<'DELIVERY' | 'SELF_PICKUP'>('DELIVERY');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showMpesaModal, setShowMpesaModal] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -52,16 +53,15 @@ export default function CheckoutPage() {
     if (typeof window === 'undefined') return;
 
     const accessToken = localStorage.getItem('accessToken');
-    if (!accessToken) {
-      router.push('/login?redirect=/checkout');
-      return;
-    }
+    setIsAuthenticated(!!accessToken);
 
-    setIsAuthenticated(true);
-    const token = generateGuestToken();
-    localStorage.setItem('guestCheckoutToken', token);
+    let token = localStorage.getItem('guestCheckoutToken');
+    if (!token) {
+      token = generateGuestToken();
+      localStorage.setItem('guestCheckoutToken', token);
+    }
     setGuestToken(token);
-  }, [router]);
+  }, []);
 
   // Form States
   const [formData, setFormData] = useState({
@@ -91,9 +91,13 @@ export default function CheckoutPage() {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const shipping = subtotal > 5000 ? 0 : 500;
+  const shipping = orderType === 'SELF_PICKUP' ? 0 : subtotal > 5000 ? 0 : 500;
   const tax = Math.round(subtotal * 0.16);
   const total = subtotal + shipping + tax;
+
+  const availablePaymentMethods = orderType === 'SELF_PICKUP'
+    ? (['PICKUP', 'MPESA', 'CYBERSOURCE'] as const)
+    : (['MPESA', 'CYBERSOURCE'] as const);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -119,8 +123,8 @@ export default function CheckoutPage() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email address';
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
     // else if (formData.phone.trim().length < 9) newErrors.phone = 'Phone number must be at least 10 digits';
-    if (!formData.address.trim()) newErrors.address = 'Address is required';
-    if (!formData.city.trim()) newErrors.city = 'City is required';
+    if (orderType === 'DELIVERY' && !formData.address.trim()) newErrors.address = 'Address is required';
+    if (orderType === 'DELIVERY' && !formData.city.trim()) newErrors.city = 'City is required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -154,6 +158,7 @@ export default function CheckoutPage() {
           items: orderItems,
           shippingData: formData,
           paymentMethod,
+          orderType,
         }),
       });
 
@@ -227,6 +232,27 @@ export default function CheckoutPage() {
     } catch (error) {
       setGeneralError(error instanceof Error ? error.message : 'Card payment failed');
       console.error('Card payment error:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePickupConfirmation = async () => {
+    if (!orderId) {
+      setGeneralError('Order ID is missing');
+      return;
+    }
+
+    setIsProcessing(true);
+    setGeneralError('');
+
+    try {
+      setStep('confirmation');
+      localStorage.removeItem('ajabuCart');
+      setTimeout(() => router.push(`/order-confirmation?orderId=${orderId}`), 1000);
+    } catch (error) {
+      setGeneralError(error instanceof Error ? error.message : 'Failed to confirm pickup order');
+      console.error('Pickup confirmation error:', error);
     } finally {
       setIsProcessing(false);
     }
@@ -502,6 +528,34 @@ export default function CheckoutPage() {
                       {errors.phone && <p className="text-destructive text-sm mt-1">{errors.phone}</p>}
                     </div>
 
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                      <label className="block text-sm font-medium">Order Type</label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOrderType('DELIVERY');
+                            setPaymentMethod('MPESA');
+                          }}
+                          className={`rounded-lg border p-3 text-left transition ${orderType === 'DELIVERY' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/60'}`}
+                        >
+                          <div className="font-semibold">Delivery</div>
+                          <div className="text-xs text-muted-foreground">Home delivery with shipping fee rules</div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOrderType('SELF_PICKUP');
+                            setPaymentMethod('PICKUP');
+                          }}
+                          className={`rounded-lg border p-3 text-left transition ${orderType === 'SELF_PICKUP' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/60'}`}
+                        >
+                          <div className="font-semibold">Self Pickup</div>
+                          <div className="text-xs text-muted-foreground">Collect from our store with zero shipping</div>
+                        </button>
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium mb-2">
                         Address *
@@ -514,7 +568,7 @@ export default function CheckoutPage() {
                         className={`w-full px-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 ${
                           errors.address ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'
                         }`}
-                        required
+                        required={orderType === 'DELIVERY'}
                       />
                       {errors.address && <p className="text-destructive text-sm mt-1">{errors.address}</p>}
                     </div>
@@ -532,7 +586,7 @@ export default function CheckoutPage() {
                           className={`w-full px-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 ${
                             errors.city ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-primary'
                           }`}
-                          required
+                          required={orderType === 'DELIVERY'}
                         />
                         {errors.city && <p className="text-destructive text-sm mt-1">{errors.city}</p>}
                       </div>
@@ -568,15 +622,23 @@ export default function CheckoutPage() {
                     <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
                       <label className="block text-sm font-medium">Payment method</label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {(['MPESA', 'CYBERSOURCE'] as const).map((method) => (
+                        {availablePaymentMethods.map((method) => (
                           <button
                             key={method}
                             type="button"
                             onClick={() => setPaymentMethod(method)}
                             className={`rounded-lg border p-3 text-left transition ${paymentMethod === method ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/60'}`}
                           >
-                            <div className="font-semibold">{method === 'MPESA' ? 'M-Pesa' : 'Card'}</div>
-                            <div className="text-xs text-muted-foreground">{method === 'MPESA' ? 'Mobile money prompt' : 'Secure card payment'}</div>
+                            <div className="font-semibold">
+                              {method === 'MPESA' ? 'M-Pesa' : method === 'CYBERSOURCE' ? 'Card' : 'Pay at Pickup'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {method === 'MPESA'
+                                ? 'Mobile money prompt'
+                                : method === 'CYBERSOURCE'
+                                ? 'Secure card payment'
+                                : 'Pay when you collect your order at our store'}
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -603,12 +665,20 @@ export default function CheckoutPage() {
                   <div className="bg-secondary/20 border border-primary rounded-lg p-6 space-y-4">
                     <div className="flex items-center gap-3">
                       <Phone className="w-6 h-6 text-primary" />
-                      <h3 className="font-semibold text-lg">{paymentMethod === 'MPESA' ? 'M-Pesa Payment' : 'Card Payment'}</h3>
+                      <h3 className="font-semibold text-lg">
+                        {paymentMethod === 'MPESA'
+                          ? 'M-Pesa Payment'
+                          : paymentMethod === 'CYBERSOURCE'
+                          ? 'Card Payment'
+                          : 'Pay at Pickup'}
+                      </h3>
                     </div>
                     <p className="text-muted-foreground text-sm">
                       {paymentMethod === 'MPESA'
                         ? 'Secure mobile money payment. You will receive a prompt on your phone to complete the transaction.'
-                        : 'Use a debit or credit card to complete the order securely.'}
+                        : paymentMethod === 'CYBERSOURCE'
+                        ? 'Use a debit or credit card to complete the order securely.'
+                        : 'Confirm your pickup order now. You can pay when you collect it from our store.'}
                     </p>
                   </div>
 
@@ -637,7 +707,7 @@ export default function CheckoutPage() {
                       <Button type="submit" className="w-full py-6 text-base" disabled={isProcessing}>{isProcessing ? 'Processing Card...' : 'Pay with Card'}</Button>
                       <Button type="button" variant="outline" onClick={() => setStep('shipping')} className="w-full">Back to Shipping</Button>
                     </form>
-                  ) : (
+                  ) : paymentMethod === 'MPESA' ? (
                     <form onSubmit={handleMpesaPayment} className="space-y-6">
                       <div>
                         <label className="block text-sm font-medium mb-2">Phone Number (M-Pesa) *</label>
@@ -672,6 +742,16 @@ export default function CheckoutPage() {
                       <Button type="submit" className="w-full py-6 text-base">Send M-Pesa Prompt</Button>
                       <Button type="button" variant="outline" onClick={() => setStep('shipping')} className="w-full">Back to Shipping</Button>
                     </form>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="bg-secondary/10 rounded-lg p-4 text-sm text-muted-foreground">
+                        <p className="font-medium text-base">Pickup Instructions</p>
+                        <p>We will confirm your order and send you pickup details via email and WhatsApp shortly.</p>
+                        <p className="mt-2">Collect your order from our store location during business hours.</p>
+                      </div>
+                      <Button onClick={handlePickupConfirmation} className="w-full py-6 text-base" disabled={isProcessing}>{isProcessing ? 'Confirming...' : 'Confirm Pickup Order'}</Button>
+                      <Button type="button" variant="outline" onClick={() => setStep('shipping')} className="w-full">Back to Shipping</Button>
+                    </div>
                   )}
                 </div>
               )}
@@ -710,7 +790,10 @@ export default function CheckoutPage() {
                       <strong>Total Amount:</strong> KES {total.toLocaleString()}
                     </p>
                     <p>
-                      <strong>Payment Method:</strong> M-Pesa
+                      <strong>Order Type:</strong> {orderType === 'SELF_PICKUP' ? 'Self Pickup' : 'Delivery'}
+                    </p>
+                    <p>
+                      <strong>Payment Method:</strong> {paymentMethod === 'PICKUP' ? 'Pay at Pickup' : paymentMethod === 'MPESA' ? 'M-Pesa' : 'Card'}
                     </p>
                   </div>
 

@@ -1,0 +1,4 @@
+-- Note: Enums and column should already exist in schema.prisma
+-- If enums don't exist, they'll be created by prisma migrate dev
+-- This is a placeholder - actual changes are in schema
+-- ALTER TABLE "Order" ADD COLUMN "orderType" "OrderType" NOT NULL DEFAULT 'DELIVERY';

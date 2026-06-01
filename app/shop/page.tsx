@@ -37,9 +37,18 @@ export default function Shop() {
       try {
         setLoading(true);
         const response = await fetch('/api/products?take=100');
-        if (!response.ok) throw new Error('Failed to fetch products');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || 'Failed to fetch products');
+        }
         const data = await response.json();
-        const productsArray = Array.isArray(data?.data?.products) ? data.data.products : [];
+        const productsArray = Array.isArray(data?.data?.products)
+          ? data.data.products
+          : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+          ? data
+          : [];
         setProducts(productsArray);
       } catch (err) {
         console.error('Error fetching products:', err);

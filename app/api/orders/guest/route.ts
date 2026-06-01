@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
       guestToken,
       validation.data.items,
       validation.data.shippingData,
-      validation.data.paymentMethod || 'MPESA'
+      validation.data.paymentMethod || 'MPESA',
+      validation.data.orderType || 'DELIVERY'
     );
 
     return apiResponse.created(order, 'Order created successfully');

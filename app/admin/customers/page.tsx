@@ -39,7 +39,7 @@ export default function AdminCustomersPage() {
         if (!res.ok) {
           throw new Error(data.error || 'Unable to fetch users');
         }
-        setUsers(data.data.users || []);
+        setUsers((data.data.users || []).filter((user: any) => !user.isAdmin && !user.isSuperAdmin));
       } catch (err: any) {
         setError(err.message || 'Failed to load customers');
       } finally {

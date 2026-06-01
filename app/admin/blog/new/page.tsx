@@ -14,6 +14,7 @@ export default function NewBlogPage() {
   const [featured, setFeatured] = useState<string | null>(null);
   const [tags, setTags] = useState('');
   const [saving, setSaving] = useState(false);
+  const [mediaUploadStatus, setMediaUploadStatus] = useState('');
 
   const handleUploadFeatured = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -23,6 +24,27 @@ export default function NewBlogPage() {
     const res = await fetch('/api/uploads', { method: 'POST', body: fd });
     const data = await res.json();
     if (data?.url) setFeatured(data.url);
+  };
+
+  const handleInsertMedia = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setMediaUploadStatus('Uploading media...');
+    try {
+      const fd = new FormData();
+      fd.append('file', f);
+      const res = await fetch('/api/uploads', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data?.url) {
+        setContent((prev) => `${prev}\n\n<img src="${data.url}" alt="Blog media" />\n\n`);
+        setMediaUploadStatus('Media added to content');
+      } else {
+        setMediaUploadStatus('Upload failed.');
+      }
+    } catch (err) {
+      console.error(err);
+      setMediaUploadStatus('Upload failed.');
+    }
   };
 
   const handleSubmit = async () => {
@@ -73,6 +95,13 @@ export default function NewBlogPage() {
           <input type="file" accept="image/*" onChange={handleUploadFeatured} />
           {featured && <img src={featured} alt="featured" className="mt-2 w-48 h-32 object-cover rounded" />}
         </div>
+        <div>
+          <label className="text-sm font-medium">Insert media into content</label>
+          <input type="file" accept="image/*" onChange={handleInsertMedia} />
+          {mediaUploadStatus && <p className="mt-2 text-sm text-muted-foreground">{mediaUploadStatus}</p>}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
         <div>
           <label className="text-sm font-medium">Tags (comma separated)</label>
           <input value={tags} onChange={(e) => setTags(e.target.value)} className="w-full border rounded px-3 py-2" />

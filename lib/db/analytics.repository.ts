@@ -197,6 +197,15 @@ export const analyticsRepository = {
       }),
     ]);
 
+    const kycRequests = await prisma.analyticsEvent.count({
+      where: {
+        eventType: 'kyc_request',
+        createdAt: {
+          gte: startDate,
+        },
+      },
+    });
+
     return {
       pageViews: pageViews._sum.views || 0,
       uniqueVisitors: uniqueVisitors.length,
@@ -204,6 +213,7 @@ export const analyticsRepository = {
       avgEventsPerVisitor: uniqueVisitors.length > 0 ? events.length / uniqueVisitors.length : 0,
       chatClicks,
       subscriberCount,
+      kycRequests,
     };
   },
 };

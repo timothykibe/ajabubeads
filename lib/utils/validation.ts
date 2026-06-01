@@ -58,12 +58,31 @@ export const createOrderSchema = z.object({
     lastName: z.string().min(1),
     email: z.string().email(),
     phone: z.string().min(1),
-    address: z.string().min(1),
-    city: z.string().min(1),
-    postalCode: z.string().min(1),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    postalCode: z.string().optional(),
     country: z.string().optional(),
   }),
-  paymentMethod: z.enum(['MPESA', 'CYBERSOURCE']).optional(),
+  paymentMethod: z.enum(['MPESA', 'CYBERSOURCE', 'PICKUP']).optional(),
+  orderType: z.enum(['DELIVERY', 'SELF_PICKUP']).optional(),
+}).superRefine((value, ctx) => {
+  const orderType = value.orderType || 'DELIVERY';
+  if (orderType === 'DELIVERY') {
+    if (!value.shippingData.address?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['shippingData', 'address'],
+        message: 'Address is required for delivery',
+      });
+    }
+    if (!value.shippingData.city?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['shippingData', 'city'],
+        message: 'City is required for delivery',
+      });
+    }
+  }
 });
 
 export const newsletterSchema = z.object({

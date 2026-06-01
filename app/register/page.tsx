@@ -15,7 +15,8 @@ import { useAuth } from '@/lib/hooks';
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const rawRedirect = searchParams.get('redirect') || '/';
+  const redirect = ['/login', '/register'].includes(rawRedirect) ? '/' : rawRedirect;
   const { register, loginWithGoogle, loading, error } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

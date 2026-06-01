@@ -25,7 +25,9 @@ export async function POST(request: NextRequest) {
     const order = await orderService.createOrder(
       auth.user.userId,
       validation.data.items,
-      validation.data.shippingData
+      validation.data.shippingData,
+      validation.data.paymentMethod || 'MPESA',
+      validation.data.orderType || 'DELIVERY'
     );
 
     return apiResponse.created(order, 'Order created successfully');

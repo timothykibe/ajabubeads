@@ -102,6 +102,23 @@ export default function AccountPage() {
     });
   };
 
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('adminToken');
+      window.dispatchEvent(new Event('auth-changed'));
+    }
+    router.push('/login');
+  };
+
+  const menuItems = [
+    { key: 'overview', label: 'Overview', icon: CheckCircle },
+    { key: 'orders', label: 'Order history', icon: ShoppingBag },
+    { key: 'saved', label: 'Saved products', icon: Heart },
+    { key: 'kyc', label: 'KYC & verification', icon: Clock },
+  ];
+
   return (
     <main className="min-h-screen bg-background">
       <Header cartCount={0} />
@@ -139,25 +156,24 @@ export default function AccountPage() {
                 <p className="text-sm text-muted-foreground mt-2">Manage orders, saved items, and profile settings all from one place.</p>
               </div>
 
-              <div className="space-y-2">
-                {[
-                  { key: 'overview', label: 'Overview' },
-                  { key: 'orders', label: 'Order history' },
-                  { key: 'saved', label: 'Saved products' },
-                  { key: 'kyc', label: 'KYC & verification' },
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    onClick={() => setSelectedSection(item.key as any)}
-                    className={`w-full text-left rounded-3xl px-4 py-4 transition-colors border border-border ${
-                      selectedSection === item.key
-                        ? 'bg-primary/10 text-primary border-primary'
-                        : 'bg-background hover:bg-muted'
-                    }`}
-                  >
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                ))}
+              <div className="space-y-3">
+                {menuItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => setSelectedSection(item.key as any)}
+                      className={`w-full rounded-3xl px-4 py-4 transition shadow-sm border ${
+                        selectedSection === item.key
+                          ? 'border-primary bg-primary/10 text-primary shadow-primary/10'
+                          : 'border-border bg-background text-foreground hover:border-primary hover:bg-primary/5'
+                      } flex items-center gap-3 text-left`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="rounded-3xl border border-border bg-background p-5">
@@ -167,28 +183,60 @@ export default function AccountPage() {
             </aside>
 
             <section className="space-y-6">
-              <div className="rounded-3xl border border-border bg-card p-6">
+              <div className="rounded-[2rem] border border-border bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-[0_30px_75px_-35px_rgba(15,23,42,0.15)]">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-sm uppercase tracking-[0.2em] text-primary">Account overview</p>
-                    <h1 className="text-4xl font-serif font-bold">{profile?.name ? `Welcome back, ${profile.name}` : 'Welcome back'}</h1>
+                    <h1 className="text-4xl font-serif font-bold">Your dashboard</h1>
                     <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                      Manage your orders, saved products and profile details from a single dashboard.
+                      At a glance: orders, wishlist, profile health and quick actions.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    <Link href="/shop">
-                      <Button variant="outline">Continue shopping</Button>
-                    </Link>
                     <Link href="/cart">
                       <Button>View cart</Button>
                     </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="inline-flex items-center justify-center rounded-3xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive transition hover:bg-destructive/20"
+                    >
+                      Logout
+                    </button>
                   </div>
                 </div>
               </div>
 
+              <div className="grid gap-3 sm:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSection('orders')}
+                  className="rounded-3xl border border-border bg-white px-4 py-4 text-sm font-medium text-foreground transition hover:border-primary hover:bg-primary/5"
+                >
+                  View orders
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSection('saved')}
+                  className="rounded-3xl border border-border bg-white px-4 py-4 text-sm font-medium text-foreground transition hover:border-primary hover:bg-primary/5"
+                >
+                  Open wishlist
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSection('overview')}
+                  className="rounded-3xl border border-border bg-white px-4 py-4 text-sm font-medium text-foreground transition hover:border-primary hover:bg-primary/5"
+                >
+                  Edit profile
+                </button>
+              </div>
+
               <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSection('orders')}
+                  className="rounded-3xl border border-border bg-background p-6 shadow-sm text-left transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
                   <div className="flex items-center gap-3 text-primary">
                     <PackageCheck className="h-5 w-5" />
                     <div>
@@ -197,8 +245,12 @@ export default function AccountPage() {
                     </div>
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">See recent orders and view shipping status.</p>
-                </div>
-                <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSection('saved')}
+                  className="rounded-3xl border border-border bg-background p-6 shadow-sm text-left transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
                   <div className="flex items-center gap-3 text-primary">
                     <Heart className="h-5 w-5" />
                     <div>
@@ -207,8 +259,12 @@ export default function AccountPage() {
                     </div>
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">Your wishlist is synced across product pages and account view.</p>
-                </div>
-                <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSection('kyc')}
+                  className="rounded-3xl border border-border bg-background p-6 shadow-sm text-left transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
                   <div className="flex items-center gap-3 text-primary">
                     <CheckCircle className="h-5 w-5" />
                     <div>
@@ -219,7 +275,7 @@ export default function AccountPage() {
                     </div>
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">Complete your profile to improve checkout speed and security.</p>
-                </div>
+                </button>
               </div>
 
               {selectedSection === 'overview' && (
@@ -232,7 +288,7 @@ export default function AccountPage() {
                       </div>
                       <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
                         <CheckCircle className="h-4 w-4" />
-                        {profile?.phone && profile?.address && profile?.city ? 'Verified' : 'Update required'}
+                        {profile?.phone && profile?.address && profile?.city ? 'Verified' : 'Complete profile'}
                       </div>
                     </div>
 
