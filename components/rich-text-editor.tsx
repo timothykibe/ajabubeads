@@ -1,74 +1,153 @@
 'use client';
 
-import React, { useRef } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import { Button } from '@/components/ui/button';
+import { Bold, Italic, Heading1, Heading2, List, ListOrdered, Image as ImageIcon, Undo, Redo } from 'lucide-react';
+import { useState } from 'react';
 
-export default function RichTextEditor({ value, onChange }: { value?: string; onChange?: (html: string) => void }) {
-  const editorRef = useRef<HTMLDivElement | null>(null);
+interface RichTextEditorProps {
+  value: string;
+  onChange: (html: string) => void;
+}
 
-  const exec = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    onChange?.(editorRef.current?.innerHTML || '');
-  };
+export default function RichTextEditor({ value, onChange }: RichTextEditorProps) {
+  const [uploading, setUploading] = useState(false);
 
-  const handleImageUpload = async (file: File) => {
-    const fd = new FormData();
-    fd.append('file', file);
-    const res = await fetch('/api/uploads', { method: 'POST', body: fd });
-    const data = await res.json();
-    if (data?.url) {
-      exec('insertImage', data.url);
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Image.configure({
+        inline: true,
+        allowBase64: false,
+      }),
+    ],
+    content: value,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+  });
+
+  if (!editor) return null;
+
+  const addImage = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch('/api/uploads', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data?.url) {
+        editor.chain().focus().setImage({ src: data.url }).run();
+      } else {
+        alert('Upload failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Upload error');
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>, isVideo = false) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (isVideo) {
-      // upload and insert iframe wrapper
-      (async () => {
-        const fd = new FormData();
-        fd.append('file', f);
-        const res = await fetch('/api/uploads', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (data?.url) {
-          const html = `<iframe src="${data.url}" frameborder="0" class="w-full h-64" allowfullscreen></iframe>`;
-          document.execCommand('insertHTML', false, html);
-          onChange?.(editorRef.current?.innerHTML || '');
-        }
-      })();
-    } else {
-      handleImageUpload(f);
-    }
-    e.currentTarget.value = '';
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) addImage(file);
+    e.target.value = '';
   };
 
   return (
-    <div>
-      <div className="mb-2 flex gap-2 flex-wrap">
-        <button type="button" onClick={() => exec('bold')} className="btn">B</button>
-        <button type="button" onClick={() => exec('italic')} className="btn">I</button>
-        <button type="button" onClick={() => exec('formatBlock', '<H1>')} className="btn">H1</button>
-        <button type="button" onClick={() => exec('formatBlock', '<H2>')} className="btn">H2</button>
-        <button type="button" onClick={() => exec('insertUnorderedList')} className="btn">• List</button>
-        <button type="button" onClick={() => exec('insertOrderedList')} className="btn">1. List</button>
-        <label className="btn cursor-pointer">
-          Insert Image
-          <input type="file" accept="image/*" onChange={(e) => handleFileInput(e, false)} className="hidden" />
-        </label>
-        <label className="btn cursor-pointer">
-          Insert Video
-          <input type="file" accept="video/*" onChange={(e) => handleFileInput(e, true)} className="hidden" />
-        </label>
+    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+      {/* Toolbar */}
+      <div className="flex flex-wrap gap-1 p-2 border-b border-gray-200 bg-gray-50">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={editor.isActive('bold') ? 'bg-gray-200' : ''}
+        >
+          <Bold className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={editor.isActive('italic') ? 'bg-gray-200' : ''}
+        >
+          <Italic className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+          className={editor.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}
+        >
+          <Heading1 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          className={editor.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}
+        >
+          <Heading2 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={editor.isActive('bulletList') ? 'bg-gray-200' : ''}
+        >
+          <List className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={editor.isActive('orderedList') ? 'bg-gray-200' : ''}
+        >
+          <ListOrdered className="h-4 w-4" />
+        </Button>
+        <div className="relative">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileInput}
+            className="absolute inset-0 opacity-0 cursor-pointer w-full"
+            disabled={uploading}
+          />
+          <Button type="button" variant="ghost" size="sm" disabled={uploading}>
+            <ImageIcon className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex-1" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().undo().run()}
+        >
+          <Undo className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().redo().run()}
+        >
+          <Redo className="h-4 w-4" />
+        </Button>
       </div>
 
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        className="min-h-[200px] border border-gray-200 rounded p-4 bg-white"
-        onInput={() => onChange?.(editorRef.current?.innerHTML || '')}
-        dangerouslySetInnerHTML={{ __html: value || '' }}
-      />
+      {/* Editor Content */}
+      <EditorContent editor={editor} className="prose prose-sm max-w-none p-4 min-h-[300px]" />
     </div>
   );
 }

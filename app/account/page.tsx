@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Heart, PackageCheck, ShoppingBag, Clock } from 'lucide-react';
+import { CheckCircle, Heart, PackageCheck, ShoppingBag, Clock, MapPin, Phone, Mail, LogOut } from 'lucide-react';
 import { Order, User, Product } from '@/lib/types';
 
 interface SavedProduct {
@@ -120,338 +120,317 @@ export default function AccountPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <Header cartCount={0} />
 
-      <div className="max-w-7xl mx-auto px-4 py-14">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">My Account</p>
-            <h1 className="text-4xl font-serif font-bold">Welcome back{profile?.name ? `, ${profile.name}` : ''}</h1>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/shop">
-              <Button variant="outline">Continue Shopping</Button>
-            </Link>
-            <Link href="/cart">
-              <Button>View Cart</Button>
-            </Link>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        {/* Header section - simplified, no duplicate CTA buttons */}
+        <div className="mb-8">
+          <p className="text-sm font-medium text-primary/80">My Account</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mt-1">
+            Welcome back{profile?.name ? `, ${profile.name}` : ''}
+          </h1>
+          <p className="text-gray-500 mt-2">Manage your orders, wishlist, and profile settings.</p>
         </div>
 
         {loading ? (
-          <div className="mt-12 rounded-3xl border border-border bg-card p-10 text-center text-muted-foreground">
-            Loading your account...
+          <div className="flex items-center justify-center h-64 rounded-2xl border border-gray-100 bg-white shadow-sm">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-gray-500">Loading your account...</p>
+            </div>
           </div>
         ) : error ? (
-          <div className="mt-12 rounded-3xl border border-destructive/20 bg-destructive/5 p-10 text-center text-destructive">
-            {error}
+          <div className="rounded-2xl bg-red-50 border border-red-200 p-6 text-center">
+            <p className="text-red-600">{error}</p>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+              Try again
+            </Button>
           </div>
         ) : (
-          <div className="mt-10 grid gap-8 lg:grid-cols-[280px_1fr]">
-            <aside className="space-y-6 rounded-3xl border border-border bg-card p-6">
-              <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-primary">My Account</p>
-                <h2 className="mt-3 text-2xl font-semibold">Quick menu</h2>
-                <p className="text-sm text-muted-foreground mt-2">Manage orders, saved items, and profile settings all from one place.</p>
+          <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+            {/* Sidebar - cleaner, more compact */}
+            <aside className="space-y-6">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-lg">
+                    {profile?.name?.charAt(0) || 'U'}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{profile?.name || 'Customer'}</p>
+                    <p className="text-xs text-gray-500">{profile?.email}</p>
+                  </div>
+                </div>
+
+                <nav className="mt-4 space-y-1">
+                  {menuItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => setSelectedSection(item.key as any)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                          selectedSection === item.key
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full mt-6 flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
               </div>
 
-              <div className="space-y-3">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={() => setSelectedSection(item.key as any)}
-                      className={`w-full rounded-3xl px-4 py-4 transition shadow-sm border ${
-                        selectedSection === item.key
-                          ? 'border-primary bg-primary/10 text-primary shadow-primary/10'
-                          : 'border-border bg-background text-foreground hover:border-primary hover:bg-primary/5'
-                      } flex items-center gap-3 text-left`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="font-medium">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="rounded-3xl border border-border bg-background p-5">
-                <p className="text-sm text-muted-foreground">Need help?</p>
-                <p className="mt-3 text-sm text-foreground">Contact support at <strong>support@ajabubeads.co.ke</strong> for account or order assistance.</p>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Support</p>
+                <p className="mt-2 text-sm text-gray-600">Need help with your account or orders?</p>
+                <a
+                  href="mailto:support@ajabubeads.co.ke"
+                  className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  support@ajabubeads.co.ke
+                </a>
               </div>
             </aside>
 
-            <section className="space-y-6">
-              <div className="rounded-[2rem] border border-border bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-[0_30px_75px_-35px_rgba(15,23,42,0.15)]">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.2em] text-primary">Account overview</p>
-                    <h1 className="text-4xl font-serif font-bold">Your dashboard</h1>
-                    <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                      At a glance: orders, wishlist, profile health and quick actions.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <Link href="/cart">
-                      <Button>View cart</Button>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="inline-flex items-center justify-center rounded-3xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive transition hover:bg-destructive/20"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
+            {/* Main content - streamlined, less redundant */}
+            <div className="space-y-6">
+              {/* Quick stats row - merged from duplicate buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button
-                  type="button"
                   onClick={() => setSelectedSection('orders')}
-                  className="rounded-3xl border border-border bg-white px-4 py-4 text-sm font-medium text-foreground transition hover:border-primary hover:bg-primary/5"
+                  className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-left transition hover:shadow-md hover:-translate-y-0.5"
                 >
-                  View orders
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedSection('saved')}
-                  className="rounded-3xl border border-border bg-white px-4 py-4 text-sm font-medium text-foreground transition hover:border-primary hover:bg-primary/5"
-                >
-                  Open wishlist
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedSection('overview')}
-                  className="rounded-3xl border border-border bg-white px-4 py-4 text-sm font-medium text-foreground transition hover:border-primary hover:bg-primary/5"
-                >
-                  Edit profile
-                </button>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedSection('orders')}
-                  className="rounded-3xl border border-border bg-background p-6 shadow-sm text-left transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  <div className="flex items-center gap-3 text-primary">
-                    <PackageCheck className="h-5 w-5" />
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm uppercase tracking-[0.2em]">Orders</p>
-                      <p className="mt-2 text-3xl font-semibold">{orders.length}</p>
+                      <p className="text-sm text-gray-500">Total orders</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">{orders.length}</p>
                     </div>
+                    <PackageCheck className="h-8 w-8 text-primary/60 group-hover:text-primary transition" />
                   </div>
-                  <p className="mt-4 text-sm text-muted-foreground">See recent orders and view shipping status.</p>
+                  <p className="text-xs text-gray-400 mt-3">View order history →</p>
                 </button>
                 <button
-                  type="button"
                   onClick={() => setSelectedSection('saved')}
-                  className="rounded-3xl border border-border bg-background p-6 shadow-sm text-left transition hover:-translate-y-0.5 hover:shadow-lg"
+                  className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-left transition hover:shadow-md hover:-translate-y-0.5"
                 >
-                  <div className="flex items-center gap-3 text-primary">
-                    <Heart className="h-5 w-5" />
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm uppercase tracking-[0.2em]">Saved items</p>
-                      <p className="mt-2 text-3xl font-semibold">{savedProducts.length}</p>
+                      <p className="text-sm text-gray-500">Wishlist</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">{savedProducts.length}</p>
                     </div>
+                    <Heart className="h-8 w-8 text-primary/60 group-hover:text-primary transition" />
                   </div>
-                  <p className="mt-4 text-sm text-muted-foreground">Your wishlist is synced across product pages and account view.</p>
+                  <p className="text-xs text-gray-400 mt-3">Manage saved items →</p>
                 </button>
                 <button
-                  type="button"
                   onClick={() => setSelectedSection('kyc')}
-                  className="rounded-3xl border border-border bg-background p-6 shadow-sm text-left transition hover:-translate-y-0.5 hover:shadow-lg"
+                  className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-left transition hover:shadow-md hover:-translate-y-0.5"
                 >
-                  <div className="flex items-center gap-3 text-primary">
-                    <CheckCircle className="h-5 w-5" />
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm uppercase tracking-[0.2em]">KYC status</p>
-                      <p className="mt-2 text-3xl font-semibold text-emerald-600">
-                        {profile?.phone && profile?.address && profile?.city ? 'Verified' : 'Pending'}
+                      <p className="text-sm text-gray-500">Verification</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {profile?.phone && profile?.address && profile?.city ? '✓' : 'Pending'}
                       </p>
                     </div>
+                    <CheckCircle className="h-8 w-8 text-primary/60 group-hover:text-primary transition" />
                   </div>
-                  <p className="mt-4 text-sm text-muted-foreground">Complete your profile to improve checkout speed and security.</p>
+                  <p className="text-xs text-gray-400 mt-3">Complete your KYC →</p>
                 </button>
               </div>
 
+              {/* Dynamic section content */}
               {selectedSection === 'overview' && (
-                <div className="space-y-6">
-                  <section className="rounded-3xl border border-border bg-card p-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm uppercase tracking-[0.2em] text-primary">Profile</p>
-                        <h2 className="text-2xl font-semibold">Account details</h2>
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-6 py-5 border-b border-gray-100">
+                    <h2 className="text-lg font-semibold text-gray-900">Profile details</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Your personal information</p>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <div className="flex items-start gap-3">
+                        <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-gray-400">Full name</p>
+                          <p className="font-medium text-gray-900">{profile?.name || 'Not set'}</p>
+                        </div>
                       </div>
-                      <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                        <CheckCircle className="h-4 w-4" />
-                        {profile?.phone && profile?.address && profile?.city ? 'Verified' : 'Complete profile'}
+                      <div className="flex items-start gap-3">
+                        <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-gray-400">Email address</p>
+                          <p className="font-medium text-gray-900">{profile?.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Phone className="h-5 w-5 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-gray-400">Phone number</p>
+                          <p className="font-medium text-gray-900">{profile?.phone || 'Not set'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-gray-400">Location</p>
+                          <p className="font-medium text-gray-900">
+                            {profile?.city || 'City'}, {profile?.country || 'Kenya'}
+                          </p>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2 mt-6">
-                      <div className="rounded-3xl border border-border bg-background p-5">
-                        <p className="text-sm text-muted-foreground">Name</p>
-                        <p className="mt-2 font-semibold">{profile?.name || 'Not set'}</p>
-                      </div>
-                      <div className="rounded-3xl border border-border bg-background p-5">
-                        <p className="text-sm text-muted-foreground">Email</p>
-                        <p className="mt-2 font-semibold">{profile?.email}</p>
-                      </div>
-                      <div className="rounded-3xl border border-border bg-background p-5">
-                        <p className="text-sm text-muted-foreground">Phone</p>
-                        <p className="mt-2 font-semibold">{profile?.phone || 'Not set'}</p>
-                      </div>
-                      <div className="rounded-3xl border border-border bg-background p-5">
-                        <p className="text-sm text-muted-foreground">Location</p>
-                        <p className="mt-2 font-semibold">{profile?.city || 'City'}, {profile?.country || 'Kenya'}</p>
-                      </div>
+                    <div className="mt-6 pt-4 border-t border-gray-100">
+                      <Link href="/profile/edit" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+                        Edit profile →
+                      </Link>
                     </div>
-                  </section>
-
-                  <section className="rounded-3xl border border-border bg-card p-6">
-                    <h2 className="text-2xl font-semibold">Recent activity</h2>
-                    <p className="text-sm text-muted-foreground mt-2">Your latest orders, saved items and account status in one place.</p>
-                  </section>
+                  </div>
                 </div>
               )}
 
               {selectedSection === 'orders' && (
-                <section className="rounded-3xl border border-border bg-card p-6">
-                  <div className="flex items-center justify-between gap-4">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center flex-wrap gap-3">
                     <div>
-                      <p className="text-sm uppercase tracking-[0.2em] text-primary">Order history</p>
-                      <h2 className="text-2xl font-semibold">Recent orders</h2>
+                      <h2 className="text-lg font-semibold text-gray-900">Order history</h2>
+                      <p className="text-sm text-gray-500 mt-0.5">Recent purchases</p>
                     </div>
-                    <Link href="/orders" className="text-sm text-primary hover:underline">
-                      View all orders
+                    <Link href="/orders" className="text-sm font-medium text-primary hover:underline">
+                      View all →
                     </Link>
                   </div>
-
                   {orders.length === 0 ? (
-                    <div className="mt-8 rounded-3xl border border-border bg-background p-8 text-center text-muted-foreground">
-                      No orders found yet. Place your first order and track it from here.
-                    </div>
-                  ) : (
-                    <div className="mt-6 space-y-4">
-                      {orders.map((order) => (
-                        <div key={order.id} className="rounded-3xl border border-border bg-background p-5">
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <p className="text-sm text-muted-foreground">Order #{order.orderNumber}</p>
-                              <p className="mt-1 text-lg font-semibold">{formatDate(order.createdAt)}</p>
-                            </div>
-                            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
-                              <Clock className="h-4 w-4" />
-                              {order.status.toLowerCase()}
-                            </div>
-                          </div>
-                          <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm text-muted-foreground">
-                            <div>{order.items.length} items · KES {order.total.toLocaleString()}</div>
-                            <div>Payment: {order.paymentStatus.toLowerCase()}</div>
-                          </div>
-                          <div className="mt-4 flex flex-wrap items-center gap-3">
-                            <Link href={`/order-confirmation?orderId=${order.id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
-                              <ShoppingBag className="h-4 w-4" />
-                              Track order
-                            </Link>
-                            <Link href={`/orders`} className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20">
-                              View all orders
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {selectedSection === 'saved' && (
-                <section className="rounded-3xl border border-border bg-card p-6">
-                  <div className="flex items-center gap-3">
-                    <Heart className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm uppercase tracking-[0.2em] text-primary">Saved products</p>
-                      <h2 className="text-xl font-semibold">Your wishlist</h2>
-                    </div>
-                  </div>
-
-                  {savedProducts.length === 0 ? (
-                    <div className="mt-6 rounded-3xl border border-dashed border-border/70 bg-background p-6 text-center text-muted-foreground">
-                      <p className="mb-3">Save products while browsing and return to them here.</p>
+                    <div className="p-10 text-center">
+                      <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                        <ShoppingBag className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <p className="mt-3 text-gray-500">No orders yet.</p>
                       <Link href="/shop">
-                        <Button variant="outline" className="mt-2">
-                          Browse products
-                        </Button>
+                        <Button className="mt-4">Start shopping</Button>
                       </Link>
                     </div>
                   ) : (
-                    <div className="mt-6 grid gap-4">
-                      {savedProducts.map((product) => (
-                        <div key={product.id} className="group rounded-3xl border border-border bg-background p-4 transition hover:shadow-lg">
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="h-20 w-20 overflow-hidden rounded-3xl bg-muted">
-                                <img src={product.image || '/placeholder.png'} alt={product.name} className="h-full w-full object-cover" />
-                              </div>
-                              <div>
-                                <p className="font-semibold">{product.name}</p>
-                                <p className="text-sm text-muted-foreground">KES {product.price.toLocaleString()}</p>
+                    <div className="divide-y divide-gray-100">
+                      {orders.slice(0, 3).map((order) => (
+                        <div key={order.id} className="p-6">
+                          <div className="flex flex-wrap justify-between items-start gap-3">
+                            <div>
+                              <p className="text-xs text-gray-400">Order #{order.orderNumber}</p>
+                              <p className="font-semibold text-gray-900 mt-1">{formatDate(order.createdAt)}</p>
+                              <div className="flex gap-3 mt-2 text-sm text-gray-500">
+                                <span>{order.items.length} items</span>
+                                <span>•</span>
+                                <span>KES {order.total.toLocaleString()}</span>
                               </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={`/product/${product.id}`} className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/20">
-                                View product
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                'bg-amber-100 text-amber-700'
+                              }`}>
+                                {order.status}
+                              </span>
+                              <Link href={`/order-confirmation?orderId=${order.id}`} className="text-sm font-medium text-primary hover:underline">
+                                Track →
                               </Link>
                             </div>
                           </div>
                         </div>
                       ))}
+                      {orders.length > 3 && (
+                        <div className="px-6 py-4 bg-gray-50 text-center text-sm text-gray-500">
+                          + {orders.length - 3} more orders
+                        </div>
+                      )}
                     </div>
                   )}
-                </section>
+                </div>
+              )}
+
+              {selectedSection === 'saved' && (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-6 py-5 border-b border-gray-100">
+                    <h2 className="text-lg font-semibold text-gray-900">Your wishlist</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Products you've saved</p>
+                  </div>
+                  {savedProducts.length === 0 ? (
+                    <div className="p-10 text-center">
+                      <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+                        <Heart className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <p className="mt-3 text-gray-500">Your wishlist is empty.</p>
+                      <Link href="/shop">
+                        <Button className="mt-4">Browse products</Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      {savedProducts.map((product) => (
+                        <div key={product.id} className="p-5 flex items-center gap-4">
+                          <div className="h-16 w-16 flex-shrink-0 rounded-xl bg-gray-100 overflow-hidden">
+                            <img src={product.image || '/placeholder.png'} alt={product.name} className="h-full w-full object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{product.name}</p>
+                            <p className="text-sm text-gray-500 mt-0.5">KES {product.price.toLocaleString()}</p>
+                          </div>
+                          <Link href={`/product/${product.id}`} className="shrink-0 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition">
+                            View
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
 
               {selectedSection === 'kyc' && (
-                <section className="rounded-3xl border border-border bg-card p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm uppercase tracking-[0.2em] text-primary">KYC & verification</p>
-                      <h2 className="text-2xl font-semibold">Identity status</h2>
-                    </div>
-                    <span className={`rounded-full px-4 py-2 text-sm font-medium ${profile?.phone && profile?.address && profile?.city ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
-                      {profile?.phone && profile?.address && profile?.city ? 'Verified' : 'Pending'}
-                    </span>
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-6 py-5 border-b border-gray-100">
+                    <h2 className="text-lg font-semibold text-gray-900">KYC & verification</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Account security & compliance</p>
                   </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2 mt-6">
-                    <div className="rounded-3xl border border-border bg-background p-5">
-                      <p className="text-sm text-muted-foreground">ID / Profile</p>
-                      <p className="mt-2 font-semibold">{profile?.phone ? 'Phone linked' : 'Phone missing'}</p>
+                  <div className="p-6">
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <div className="rounded-xl border border-gray-100 p-4">
+                        <p className="text-xs text-gray-400">Phone verification</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="font-medium">{profile?.phone ? '✓ Verified' : 'Not verified'}</p>
+                          {!profile?.phone && (
+                            <Link href="/profile/edit" className="text-xs text-primary">Add</Link>
+                          )}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-gray-100 p-4">
+                        <p className="text-xs text-gray-400">Address</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="font-medium">{profile?.address ? 'On file' : 'Missing'}</p>
+                          {!profile?.address && (
+                            <Link href="/profile/edit" className="text-xs text-primary">Add</Link>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="rounded-3xl border border-border bg-background p-5">
-                      <p className="text-sm text-muted-foreground">Address</p>
-                      <p className="mt-2 font-semibold">{profile?.address ? 'Address on file' : 'No address yet'}</p>
-                    </div>
-                    <div className="rounded-3xl border border-border bg-background p-5">
-                      <p className="text-sm text-muted-foreground">City</p>
-                      <p className="mt-2 font-semibold">{profile?.city || 'Not provided'}</p>
-                    </div>
-                    <div className="rounded-3xl border border-border bg-background p-5">
-                      <p className="text-sm text-muted-foreground">Country</p>
-                      <p className="mt-2 font-semibold">{profile?.country || 'Kenya'}</p>
+                    <div className="mt-5 rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-700">
+                      <strong>Note:</strong> Providing accurate KYC information helps speed up checkout and secure your account.
                     </div>
                   </div>
-
-                  <div className="mt-6 rounded-3xl border border-dashed border-border/70 bg-background p-6 text-sm text-muted-foreground">
-                    Add more profile details to improve account security and checkout speed.
-                  </div>
-                </section>
+                </div>
               )}
-            </section>
+            </div>
           </div>
         )}
       </div>
